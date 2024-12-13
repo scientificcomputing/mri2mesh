@@ -3,21 +3,21 @@ requires = ["setuptools>=61.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mri2fem"
+name = "mri2mesh"
 version = "0.1.0"
 dependencies = ["pyvista", "numpy", "matplotlib", "nibabel", "scikit-image", "scipy", ]
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
 ]
-description = "Source code for the mri2fem book."
+description = "Tool for converting labeled MRI data to a mesh"
 authors = [
     {name = "Marius Causemann", email = "mariusca@simula.no"},
     {name = "Henrik Finsberg", email = "henriknf@simula.no"},
 
 ]
 keywords = ["mri", "fem", "brain", "fluid", "mechanics", "meshing"]
-urls = {Homepage = "https://github.com/kent-and/mri2fem"}
+urls = {Homepage = "https://github.com/kent-and/mri2mesh"}
 
 
 [project.readme]
@@ -26,7 +26,7 @@ content-type = "text/markdown"
 
 
 [project.scripts]
-mri2fem = "mri2fem.cli:main"
+mri2mesh = "mri2mesh.cli:main"
 
 [project.optional-dependencies]
 test = ["pytest"]
@@ -52,7 +52,7 @@ testpaths = ["tests"]
 
 
 [tool.mypy]
-files = ["src/mri2fem", "tests"]
+files = ["src/mri2mesh", "tests"]
 ignore_missing_imports = true
 exclude = [
     "docs",
@@ -60,7 +60,7 @@ exclude = [
 ]
 
 [tool.coverage.run]
-omit = ["src/mri2fem/__main__.py"]
+omit = ["src/mri2mesh/__main__.py"]
 
 
 [tool.ruff]

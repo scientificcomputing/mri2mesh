@@ -26,7 +26,7 @@ def setup_parser():
 
     # Surface generation parser
     surface_parser = subparsers.add_parser("surface", help="Generate surfaces")
-    surface.add_arguments(surface_parser)
+    surface.add_surface_parser(surface_parser)
     return parser
 
 
@@ -53,7 +53,7 @@ def dispatch(parser: argparse.ArgumentParser) -> int:
         if command == "viz":
             viz.dispatch(args.pop("viz-command"), args)
         elif command == "surface":
-            surface.main(**args)
+            surface.dispatch(args.pop("surface-command"), args)
         else:
             logger.error(f"Unknown command {command}")
             parser.print_help()
