@@ -29,7 +29,7 @@ content-type = "text/markdown"
 mri2mesh = "mri2mesh.cli:main"
 
 [project.optional-dependencies]
-test = ["pytest"]
+test = ["pytest", "pytest-cov"]
 
 
 [tool.setuptools]
