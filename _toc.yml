@@ -1,0 +1,13 @@
+format: jb-book
+root: README
+
+parts:
+  - caption: Examples
+    chapters:
+    - file: "examples/synthseg.ipynb"
+  - caption: Community
+    chapters:
+      - file: "CONTRIBUTING"
+  - caption: Python API
+    chapters:
+    - file: "docs/api"

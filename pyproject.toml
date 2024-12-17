@@ -30,6 +30,8 @@ mri2mesh = "mri2mesh.cli:main"
 
 [project.optional-dependencies]
 test = ["pytest", "pytest-cov"]
+docs = ["pyvista[jupyter]", "jupyter-book"]
+
 
 
 [tool.setuptools]
@@ -41,8 +43,6 @@ zip-safe = false
 where = ["src"]
 namespaces = false
 
-[tool.setuptools.package-data]
-"*" = ["*.lark"]
 
 [tool.aliases]
 test = "pytest"

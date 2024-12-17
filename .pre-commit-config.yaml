@@ -8,6 +8,7 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
+        args: ['--maxkb=1000']
       - id: check-docstring-first
       - id: debug-statements
       - id: check-toml
@@ -28,3 +29,9 @@ repos:
       - id: mypy
         files: ^src/|^tests/
         args: ["--config-file", "pyproject.toml"]
+
+
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.8.1
+    hooks:
+      - id: nbstripout
