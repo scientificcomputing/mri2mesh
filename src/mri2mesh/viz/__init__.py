@@ -7,6 +7,10 @@ from .mpl_slice import plot_slices
 __all__ = ["add_viz_parser", "dispatch", "numpy_to_vtkImageData", "plot_slices", "mpl_slice"]
 
 
+def list_viz_commands() -> list[str]:
+    return ["volume-clip", "volume-slice", "volume-threshold", "mpl-slice"]
+
+
 def add_viz_parser(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="viz-command")
 

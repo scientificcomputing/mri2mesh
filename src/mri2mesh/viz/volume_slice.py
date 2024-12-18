@@ -76,13 +76,12 @@ def volume_slice(mesh: pv.ImageData, axis=0, slider: bool = False) -> None:
             name="slice",
             normal=normal,
             origin=origin,
-            title=f"{index2title[axis]}-coordinate",
         )
 
     plotter.show()
 
 
-def main(input: Path, axis: int = 0, slider: bool = False) -> int:
+def main(input: Path, axis: int = 3, slider: bool = False) -> int:
     reader = pv.get_reader(input)
     mesh = reader.read()
     if axis == 3:

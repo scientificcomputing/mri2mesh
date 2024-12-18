@@ -1,3 +1,4 @@
+from __future__ import annotations
 from pathlib import Path
 import logging
 import typing
@@ -13,7 +14,7 @@ from .segmentation_labels import NEUROQUANT_LABELS, SYNTHSEG_LABELS
 logger = logging.getLogger(__name__)
 
 
-@dataclass(slots=True)
+@dataclass  # (slots=True) # - will be added when we drop python3.9
 class Segmentation:
     img: np.ndarray
     labels: dict[str, list[int]] = field(default_factory=lambda: SYNTHSEG_LABELS)

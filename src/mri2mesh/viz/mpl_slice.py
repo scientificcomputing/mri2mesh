@@ -1,4 +1,6 @@
+from __future__ import annotations
 import argparse
+import typing
 from pathlib import Path
 import nibabel as nib
 import matplotlib.pyplot as plt
@@ -69,54 +71,56 @@ def main(
     return 0
 
 
+def plot_slice(
+    img: np.ndarray,
+    outdir: Path | None,
+    tag: str,
+    cmap: str,
+    labels,
+    add_colorbar: bool,
+    nx: int,
+    ny: int,
+    slice: str,
+):
+    minval = np.min(img)
+    maxval = np.max(img)
+    fig, ax = plt.subplots(nx, ny, figsize=(20, 20))
+
+    slice2axis = {"x": 0, "y": 1, "z": 2}
+    axis = slice2axis[slice]
+
+    for k, i in enumerate(np.linspace(0, img.shape[axis], 26, dtype=int)[:-1]):
+        ax.flatten()[k].set_title(f"{i}")
+        img_i = img.take(indices=i, axis=axis)
+        im = ax.flatten()[k].imshow(img_i, cmap=cmap, vmin=minval, vmax=maxval)
+    if add_colorbar:
+        fig.subplots_adjust(right=0.8)
+        cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
+        cax = fig.colorbar(im, cax=cbar_ax)
+        if labels:
+            cax.ax.set_yticks(np.array(list(labels.values())))
+            cax.ax.set_yticklabels(np.array(list(labels.keys())))
+    if outdir is not None:
+        fig.savefig(outdir / f"{tag}x_slice.png")
+    else:
+        plt.show()
+    plt.close("all")
+
+
 def plot_slices(
-    img,
-    outdir,
+    img: np.ndarray,
+    outdir: Path | None = None,
     tag="",
     cmap="gray",
     labels=None,
     add_colorbar=False,
     nx: int = 5,
     ny: int = 5,
+    slice: typing.Literal["x", "y", "z", "all"] = "all",
 ):
-    fig, ax = plt.subplots(nx, ny, figsize=(20, 20))
-    minval = np.min(img)
-    maxval = np.max(img)
-    for k, i in enumerate(np.linspace(0, img.shape[0], 26, dtype=int)[:-1]):
-        ax.flatten()[k].set_title(f"{i}")
-        im = ax.flatten()[k].imshow(img[i, :, :], cmap=cmap, vmin=minval, vmax=maxval)
-    if add_colorbar:
-        fig.subplots_adjust(right=0.8)
-        cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
-        cax = fig.colorbar(im, cax=cbar_ax)
-        if labels:
-            cax.ax.set_yticks(np.array(list(labels.values())))
-            cax.ax.set_yticklabels(np.array(list(labels.keys())))
-    fig.savefig(outdir / f"{tag}x_slice.png")
-
-    fig, ax = plt.subplots(nx, ny, figsize=(20, 20))
-    for k, i in enumerate(np.linspace(0, img.shape[1], 26, dtype=int)[:-1]):
-        ax.flatten()[k].set_title(f"{i}")
-        im = ax.flatten()[k].imshow(img[:, i, :], cmap=cmap, vmin=minval, vmax=maxval)
-    if add_colorbar:
-        fig.subplots_adjust(right=0.8)
-        cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
-        cax = fig.colorbar(im, cax=cbar_ax)
-        if labels:
-            cax.ax.set_yticks(np.array(list(labels.values())))
-            cax.ax.set_yticklabels(np.array(list(labels.keys())))
-    fig.savefig(outdir / f"{tag}y_slice.png")
-
-    fig, ax = plt.subplots(nx, ny, figsize=(20, 20))
-    for k, i in enumerate(np.linspace(0, img.shape[2], 26, dtype=int)[:-1]):
-        ax.flatten()[k].set_title(f"{i}")
-        im = ax.flatten()[k].imshow(img[:, :, i], cmap=cmap, vmin=minval, vmax=maxval)
-    if add_colorbar:
-        fig.subplots_adjust(right=0.8)
-        cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
-        cax = fig.colorbar(im, cax=cbar_ax)
-        if labels:
-            cax.ax.set_yticks(np.array(list(labels.values())))
-            cax.ax.set_yticklabels(np.array(list(labels.keys())))
-    fig.savefig(outdir / f"{tag}z_slice.png")
-    plt.close("all")
+    if slice == "all":
+        plot_slice(img, outdir, tag, cmap, labels, add_colorbar, nx, ny, "x")
+        plot_slice(img, outdir, tag, cmap, labels, add_colorbar, nx, ny, "y")
+        plot_slice(img, outdir, tag, cmap, labels, add_colorbar, nx, ny, "z")
+    else:
+        plot_slice(img, outdir, tag, cmap, labels, add_colorbar, nx, ny, slice)
