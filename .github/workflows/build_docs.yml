@@ -15,7 +15,6 @@ jobs:
 
   build:
     runs-on: ubuntu-22.04
-    container: ghcr.io/finsberg/ftfetwild-meta:main
     env:
       PUBLISH_DIR: ./_build/html
       DISPLAY: ":99.0"
@@ -28,10 +27,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup python
-        uses: actions/setup-python@v5
+      - name: Cache conda
+        uses: actions/cache@v3
+        env:
+          # Increase this value to reset cache if environment.yml has not changed
+          CACHE_NUMBER: 0
+        with:
+          path: ~/conda_pkgs_dir
+          key:
+            ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{
+            hashFiles('environment.yml') }}
+
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: 3.12
+          mamba-version: "*"
+          channels: conda-forge,defaults
+          channel-priority: strict
+          activate-environment: mri2mesh
+          environment-file: environment.yml
+          use-only-tar-bz2: true
 
       - name: Install dependencies
         run: python3 -m pip install ".[docs]"

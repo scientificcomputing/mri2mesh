@@ -19,11 +19,27 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+
+    - name: Cache conda
+      uses: actions/cache@v3
+      env:
+        # Increase this value to reset cache if environment.yml has not changed
+        CACHE_NUMBER: 0
+      with:
+        path: ~/conda_pkgs_dir
+        key:
+          ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-py-${{ matrix.python-version }}${{
+          hashFiles('environment.yml') }}
+
+    - uses: conda-incubator/setup-miniconda@v3
       with:
         python-version: ${{ matrix.python-version }}
-        allow-prereleases: true
+        mamba-version: "*"
+        channels: conda-forge,defaults
+        channel-priority: strict
+        activate-environment: mri2mesh
+        environment-file: environment.yml
+        use-only-tar-bz2: true
 
     - name: Install mri2mesh
       run: |
