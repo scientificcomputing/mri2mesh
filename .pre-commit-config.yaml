@@ -29,6 +29,7 @@ repos:
       - id: mypy
         files: ^src/|^tests/
         args: ["--config-file", "pyproject.toml"]
+        additional_dependencies: ['types-toml', 'types-PyYAML']
 
 
   - repo: https://github.com/kynan/nbstripout

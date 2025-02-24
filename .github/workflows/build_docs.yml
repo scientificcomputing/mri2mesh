@@ -15,6 +15,7 @@ jobs:
 
   build:
     runs-on: ubuntu-22.04
+    container: ghcr.io/finsberg/ftfetwild-meta:main
     env:
       PUBLISH_DIR: ./_build/html
       DISPLAY: ":99.0"
@@ -26,9 +27,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Install dependencies for pyvista
-        run: sudo apt-get update && sudo apt-get install -y libgl1-mesa-dev xvfb
 
       - name: Setup python
         uses: actions/setup-python@v5

@@ -1,7 +1,7 @@
 import logging
 import argparse
 
-from . import viz, surface
+from . import viz, surface, mesh
 
 
 def setup_parser():
@@ -27,6 +27,10 @@ def setup_parser():
     # Surface generation parser
     surface_parser = subparsers.add_parser("surface", help="Generate surfaces")
     surface.add_surface_parser(surface_parser)
+
+    # Mesh generation parser
+    mesh_parser = subparsers.add_parser("mesh", help="Generate meshes")
+    mesh.add_mesh_parser(mesh_parser)
     return parser
 
 
@@ -54,6 +58,8 @@ def dispatch(parser: argparse.ArgumentParser) -> int:
             viz.dispatch(args.pop("viz-command"), args)
         elif command == "surface":
             surface.dispatch(args.pop("surface-command"), args)
+        elif command == "mesh":
+            mesh.dispatch(args.pop("mesh-command"), args)
         else:
             logger.error(f"Unknown command {command}")
             parser.print_help()

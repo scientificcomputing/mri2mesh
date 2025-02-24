@@ -3,7 +3,7 @@ import numpy as np
 import numpy.typing as npt
 import skimage.morphology as skim
 import skimage
-import scipy.ndimage as ndi
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +34,8 @@ def get_closest_point(a: npt.NDArray, b: np.ndarray) -> tuple[np.int64, ...]:
     >>> assert np.allclose(a_b_index, (5, 5, 5))
 
     """
+    import scipy.ndimage as ndi
+
     dist = ndi.distance_transform_edt(np.logical_not(a))
     assert isinstance(dist, np.ndarray)
     dist[np.logical_not(b)] = np.inf
