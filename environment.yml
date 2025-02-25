@@ -15,5 +15,6 @@ dependencies:
   - imageio-ffmpeg
   - napari
   - jupyter
+  - pip
   - pip:
     - wildmeshing
