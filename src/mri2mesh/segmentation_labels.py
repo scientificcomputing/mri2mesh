@@ -1,3 +1,20 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def dispatch(name: str) -> None:
+    logger.info(f"Listing segmentation labels for {name}")
+    if name == "synthseg":
+        for label, values in SYNTHSEG_LABELS.items():
+            print(f"{label}: {values}")
+    elif name == "neuroquant":
+        for label, values in NEUROQUANT_LABELS.items():
+            print(f"{label}: {values}")
+    else:
+        raise ValueError(f"Unknown segmentation labels {name}")
+
+
 SYNTHSEG_LABELS = {
     "BACKGROUND": [0],
     "LEFT_CEREBRAL_WHITE_MATTER": [2],

@@ -8,12 +8,18 @@ logger = logging.getLogger(__name__)
 
 
 def add_surface_parser(parser: argparse.ArgumentParser) -> None:
-    subparsers = parser.add_subparsers(dest="surface-command")
+    subparsers = parser.add_subparsers(
+        dest="surface-command",
+    )
 
     parenchyma_parser = subparsers.add_parser("parenchyma", help="Generate parenchyma surface")
     parenchyma.add_arguments(parenchyma_parser)
 
-    idealized_parser = subparsers.add_parser("idealized", help="Generate idealized surface")
+    idealized_parser = subparsers.add_parser(
+        "idealized",
+        help="Generate idealized surface",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     idealized_brain.add_arguments(idealized_parser)
 
 

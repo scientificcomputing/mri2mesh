@@ -225,6 +225,9 @@ def convert_mesh_dolfinx(mesh_dir: Path):
         np.hstack(facets),
         np.hstack(values),
     )
+    facet_tags.name = "facet_tags"
+    cell_tags.name = "cell_tags"
+    mesh.name = "mesh"
 
     logger.debug("Save files")
     with dolfinx.io.XDMFFile(comm, mesh_dir / "mesh.xdmf", "w") as xdmf:
