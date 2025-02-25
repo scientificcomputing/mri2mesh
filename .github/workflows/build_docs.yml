@@ -15,6 +15,7 @@ jobs:
 
   build:
     runs-on: ubuntu-22.04
+    container: ghcr.io/fenics/dolfinx/lab:stable
     env:
       PUBLISH_DIR: ./_build/html
       DISPLAY: ":99.0"
@@ -27,28 +28,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install dependencies for pyvista
-        run: sudo apt-get update && sudo apt-get install -y libgl1-mesa-dev xvfb
-
-      - name: Cache conda
-        uses: actions/cache@v3
-        env:
-          # Increase this value to reset cache if environment.yml has not changed
-          CACHE_NUMBER: 0
-        with:
-          path: ~/conda_pkgs_dir
-          key:
-            ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{
-            hashFiles('environment.yml') }}
-
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          auto-update-conda: false
-          channels: conda-forge,defaults
-          channel-priority: strict
-          activate-environment: mri2mesh
-          environment-file: environment.yml
-          miniforge-version: latest
 
       - name: Install dependencies
         run: python3 -m pip install ".[docs]"
