@@ -34,6 +34,7 @@ jobs:
     - uses: conda-incubator/setup-miniconda@v3
       with:
         python-version: ${{ matrix.python-version }}
+        auto-update-conda: false
         channels: conda-forge,defaults
         channel-priority: strict
         activate-environment: mri2mesh
