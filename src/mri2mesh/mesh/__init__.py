@@ -25,7 +25,11 @@ def add_mesh_parser(parser: argparse.ArgumentParser) -> None:
     convert_parser = subparsers.add_parser("convert", help="Convert mesh to dolfinx")
     convert_parser.add_argument("mesh_dir", type=Path, help="Directory containing mesh files")
 
-    idealized_parser = subparsers.add_parser("idealized", help="Generate idealized surface")
+    idealized_parser = subparsers.add_parser(
+        "idealized",
+        help="Generate idealized surface",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     idealized_brain.add_arguments(idealized_parser)
 
 

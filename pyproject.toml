@@ -16,6 +16,7 @@ authors = [
     {name = "Marius Causemann", email = "mariusca@simula.no"},
 
 ]
+license = {text = "MIT"}
 keywords = ["mri", "fem", "brain", "meshing"]
 urls = {Homepage = "https://github.com/scientificcomputing/mri2mesh"}
 
