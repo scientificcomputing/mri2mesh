@@ -39,6 +39,7 @@ jobs:
         activate-environment: mri2mesh
         environment-file: environment.yml
         use-only-tar-bz2: true
+        miniforge-version: latest
 
     - name: Install mri2mesh
       run: |
