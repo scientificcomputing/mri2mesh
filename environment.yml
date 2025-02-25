@@ -2,7 +2,7 @@ name: mri2mesh
 channels:
   - conda-forge
 dependencies:
-  - fenics-dolfinx
+  - fenics-dolfinx>=0.9.0
   - numpy
   - ipython
   - matplotlib
