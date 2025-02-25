@@ -41,7 +41,6 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: 3.12
-          mamba-version: "*"
           channels: conda-forge,defaults
           channel-priority: strict
           activate-environment: mri2mesh
