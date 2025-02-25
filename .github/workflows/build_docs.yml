@@ -27,6 +27,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install dependencies for pyvista
+        run: apt-get update && apt-get install -y libgl1-mesa-dev xvfb
+
       - name: Cache conda
         uses: actions/cache@v3
         env:
