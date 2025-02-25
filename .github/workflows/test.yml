@@ -35,11 +35,9 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         auto-update-conda: false
-        channels: conda-forge,defaults
-        channel-priority: strict
+        channels: conda-forge
         activate-environment: mri2mesh
         environment-file: environment.yml
-        miniforge-version: latest
 
     - name: Install mri2mesh
       run: |
