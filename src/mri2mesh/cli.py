@@ -1,7 +1,6 @@
-from __future__ import annotations
 import logging
 import argparse
-from typing import Sequence
+from typing import Sequence, Optional
 
 from . import viz, surface, mesh, segmentation_labels
 
@@ -47,7 +46,7 @@ def _disable_loggers():
         logging.getLogger(libname).setLevel(logging.WARNING)
 
 
-def dispatch(parser: argparse.ArgumentParser, argv: Sequence[str] | None = None) -> int:
+def dispatch(parser: argparse.ArgumentParser, argv: Optional[Sequence[str]] = None) -> int:
     args = vars(parser.parse_args(argv))
     logging.basicConfig(level=logging.DEBUG if args.pop("verbose") else logging.INFO)
     _disable_loggers()
@@ -80,6 +79,6 @@ def dispatch(parser: argparse.ArgumentParser, argv: Sequence[str] | None = None)
     return 0
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = setup_parser()
     return dispatch(parser, argv)

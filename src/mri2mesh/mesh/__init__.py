@@ -4,6 +4,9 @@ import argparse
 from pathlib import Path
 
 from . import basic, idealized_brain
+from .basic import create_mesh
+
+__all__ = ["basic", "idealized_brain", "create_mesh"]
 
 logger = logging.getLogger(__name__)
 
