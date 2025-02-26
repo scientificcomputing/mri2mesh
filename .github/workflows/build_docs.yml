@@ -29,6 +29,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install dependencies for pyvista
+        run: apt-get update && apt-get install -y libxrender1 xvfb
 
       - name: Install dependencies
         run: python3 -m pip install ".[docs]"
