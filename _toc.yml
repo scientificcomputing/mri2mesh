@@ -5,6 +5,7 @@ parts:
   - caption: Examples
     chapters:
     - file: "examples/synthseg.ipynb"
+    - file: "examples/cli.ipynb"
   - caption: Community
     chapters:
       - file: "CONTRIBUTING"

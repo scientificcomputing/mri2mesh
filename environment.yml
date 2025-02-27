@@ -1,0 +1,20 @@
+name: mri2mesh
+channels:
+  - conda-forge
+dependencies:
+  - numpy
+  - fenics-dolfinx
+  - ipython
+  - matplotlib
+  - pyvista
+  - scikit-image
+  - meshio
+  - h5py
+  - seaborn
+  - nibabel
+  - imageio-ffmpeg
+  - napari
+  - jupyter
+  - pip
+  - pip:
+    - wildmeshing

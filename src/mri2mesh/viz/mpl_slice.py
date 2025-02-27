@@ -2,8 +2,6 @@ from __future__ import annotations
 import argparse
 import typing
 from pathlib import Path
-import nibabel as nib
-import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -58,6 +56,8 @@ def main(
     input: Path, output: Path, tag: str, cmap: str, add_colorbar: bool, nx: int, ny: int
 ) -> int:
     output.mkdir(parents=True, exist_ok=True)
+    import nibabel as nib
+
     img = nib.load(input).get_fdata()
     plot_slices(
         img,
@@ -82,6 +82,8 @@ def plot_slice(
     ny: int,
     slice: str,
 ):
+    import matplotlib.pyplot as plt
+
     minval = np.min(img)
     maxval = np.max(img)
     fig, ax = plt.subplots(nx, ny, figsize=(20, 20))

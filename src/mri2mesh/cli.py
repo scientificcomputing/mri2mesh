@@ -1,7 +1,8 @@
 import logging
 import argparse
+from typing import Sequence, Optional
 
-from . import viz, surface
+from . import viz, surface, mesh, segmentation_labels
 
 
 def setup_parser():
@@ -27,6 +28,16 @@ def setup_parser():
     # Surface generation parser
     surface_parser = subparsers.add_parser("surface", help="Generate surfaces")
     surface.add_surface_parser(surface_parser)
+
+    # Mesh generation parser
+    mesh_parser = subparsers.add_parser("mesh", help="Generate meshes")
+    mesh.add_mesh_parser(mesh_parser)
+
+    label_parser = subparsers.add_parser("labels", help="List segmentation labels")
+    label_parser.add_argument(
+        "name", type=str, choices=["synthseg", "neuroquant"], help="Name of the labels to display"
+    )
+
     return parser
 
 
@@ -35,8 +46,8 @@ def _disable_loggers():
         logging.getLogger(libname).setLevel(logging.WARNING)
 
 
-def dispatch(parser: argparse.ArgumentParser) -> int:
-    args = vars(parser.parse_args())
+def dispatch(parser: argparse.ArgumentParser, argv: Optional[Sequence[str]] = None) -> int:
+    args = vars(parser.parse_args(argv))
     logging.basicConfig(level=logging.DEBUG if args.pop("verbose") else logging.INFO)
     _disable_loggers()
 
@@ -54,6 +65,10 @@ def dispatch(parser: argparse.ArgumentParser) -> int:
             viz.dispatch(args.pop("viz-command"), args)
         elif command == "surface":
             surface.dispatch(args.pop("surface-command"), args)
+        elif command == "mesh":
+            mesh.dispatch(args.pop("mesh-command"), args)
+        elif command == "labels":
+            segmentation_labels.dispatch(args.pop("name"))
         else:
             logger.error(f"Unknown command {command}")
             parser.print_help()
@@ -64,6 +79,6 @@ def dispatch(parser: argparse.ArgumentParser) -> int:
     return 0
 
 
-def main() -> int:
+def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = setup_parser()
-    return dispatch(parser)
+    return dispatch(parser, argv)

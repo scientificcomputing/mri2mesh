@@ -2,12 +2,10 @@ from __future__ import annotations
 from pathlib import Path
 import logging
 import typing
-
 import numpy as np
 import numpy.typing as npt
 
 from dataclasses import dataclass, field
-import nibabel as nib
 
 from .segmentation_labels import NEUROQUANT_LABELS, SYNTHSEG_LABELS
 
@@ -54,6 +52,8 @@ def read(
     label_name: typing.Literal["synthseg", "neuroquant"] = "synthseg",
     padding: int = 5,
 ) -> Segmentation:
+    import nibabel as nib
+
     logger.info(f"Loading segmentation from {input}")
     seg = nib.load(input)
     img = np.pad(seg.get_fdata(), padding)
