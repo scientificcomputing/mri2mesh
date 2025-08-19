@@ -156,83 +156,149 @@ def create_mesh(
         manifold_surface=manifold_surface,
         correct_surface_orientation=True,
     )
-    coords, connections = tetra.get_tracked_surfaces()
 
     tetra_mesh = meshio.Mesh(
         point_array, [("tetra", cell_array)], cell_data={"cell_tags": [marker.ravel()]}
     )
-    tetra_mesh_pv = pv.from_meshio(tetra_mesh).clean()
+
+    tetra_mesh_pv = pv.from_meshio(tetra_mesh)
     pv.save_meshio(outdir / "tetra_mesh.xdmf", tetra_mesh_pv)
 
-    for i, coord in enumerate(coords):
-        np.save(outdir / f"coords_{i}.npy", coord)
+    np.save(outdir / "point_array.npy", point_array)
+    np.save(outdir / "cell_array.npy", cell_array)
+    np.save(outdir / "marker.npy", marker)
 
-    for i, conn in enumerate(connections):
-        np.save(outdir / f"connections_{i}.npy", conn)
+    # coords, connections = tetra.get_tracked_surfaces()
+    # for i, coord in enumerate(coords):
+    #     np.save(outdir / f"coords_{i}.npy", coord)
+
+    # for i, conn in enumerate(connections):
+    #     np.save(outdir / f"connections_{i}.npy", conn)
+
+    # cell_tags.find
+    # Compute incident with facets
+    # Intersection exterior facets
 
 
-def convert_mesh_dolfinx(mesh_dir: Path):
+def convert_mesh_dolfinx(
+    mesh_dir: Path, extract_facet_tags: bool = False, extract_submesh: bool = False
+):
     logger.info("Converting mesh to dolfinx in %s", mesh_dir)
     from mpi4py import MPI
-    from scipy.spatial.distance import cdist
     import dolfinx
+    import basix
+    import ufl
 
-    threshold = 1.0
-    fdim = 2
+    point_array = np.load(mesh_dir / "point_array.npy")
+    cell_array = np.load(mesh_dir / "cell_array.npy")
+    marker = np.load(mesh_dir / "marker.npy")
 
-    coords = []
-    for path in sorted(mesh_dir.glob("coords_*.npy"), key=lambda x: int(x.stem.split("_")[-1])):
-        coords.append(np.load(path))
-    logger.debug(f"Found {len(coords)} coordinates")
-
-    connections = []
-    for path in sorted(
-        mesh_dir.glob("connections_*.npy"), key=lambda x: int(x.stem.split("_")[-1])
-    ):
-        connections.append(np.load(path))
-    logger.debug(f"Found {len(connections)} connections")
-
-    assert len(connections) == len(coords)
-
-    logger.debug("Loading mesh")
     comm = MPI.COMM_WORLD
-    with dolfinx.io.XDMFFile(comm, mesh_dir / "tetra_mesh.xdmf", "r") as xdmf:
-        mesh = xdmf.read_mesh(name="Grid")
-        cell_tags = xdmf.read_meshtags(mesh, name="Grid")
+    mesh = dolfinx.mesh.create_mesh(
+        comm,
+        cell_array.astype(np.int64),
+        point_array,
+        ufl.Mesh(basix.ufl.element("Lagrange", "tetrahedron", 1, shape=(3,))),
+    )
+    tdim = mesh.topology.dim
+    fdim = tdim - 1
+    local_entities, local_values = dolfinx.io.gmshio.distribute_entity_data(
+        mesh,
+        tdim,
+        cell_array.astype(np.int64),
+        marker.flatten().astype(np.int32),
+    )
+    adj = dolfinx.graph.adjacencylist(local_entities)
+    cell_tags = dolfinx.mesh.meshtags_from_entities(
+        mesh,
+        tdim,
+        adj,
+        local_values.astype(np.int32, copy=False),
+    )
+    cell_tags.name = "cell_tags"
+    if not extract_facet_tags:
+        logger.debug("Save files")
+        with dolfinx.io.XDMFFile(comm, mesh_dir / "mesh.xdmf", "w") as xdmf:
+            xdmf.write_mesh(mesh)
+            xdmf.write_meshtags(cell_tags, mesh.geometry)
 
-    logger.debug("Mesh loaded")
+        return
 
-    facets = []
+    mesh.topology.create_connectivity(tdim - 1, tdim)
+
+    # FIXME: Here we just add hard coded values for now. This should be fixed in the future.
+
+    entities = []
     values = []
-    for i, coord in enumerate(coords, start=1):
-        logger.debug(f"Processing coord {i}")
+    # 1 = Parenchyma
+    PARENCHYMA = 1
 
-        def locator(x):
-            # Find the distance to all coordinates
-            distances = cdist(x.T, coord)
-            # And return True is they are close
-            return np.any(distances < threshold, axis=1)
+    cells = cell_tags.find(PARENCHYMA)
+    exterior_facets = dolfinx.mesh.exterior_facet_indices(mesh.topology)
+    incident_facets = dolfinx.mesh.compute_incident_entities(mesh.topology, cells, tdim, tdim - 1)
+    exterior_facets_marker = np.intersect1d(incident_facets, exterior_facets)
+    values.append(np.full(exterior_facets_marker.shape[0], PARENCHYMA, dtype=np.int32))
+    entities.append(exterior_facets_marker)
 
-        f = dolfinx.mesh.locate_entities_boundary(mesh, dim=fdim, marker=locator)
-        v = np.full(f.shape[0], i, dtype=np.int32)
-        facets.append(f)
-        values.append(v)
+    VENTRICLES = 3
+    all_cell_tags = np.unique(cell_tags.values)
+    cell_not_ventricles = np.setdiff1d(all_cell_tags, [VENTRICLES])
+    import scifem
 
-    logger.debug("Create meshtags")
+    interface_entities = scifem.mesh.find_interface(cell_tags, [VENTRICLES], cell_not_ventricles)
+    entities.append(interface_entities)
+    values.append(np.full(interface_entities.shape[0], VENTRICLES, dtype=np.int32))
+
     facet_tags = dolfinx.mesh.meshtags(
         mesh,
         fdim,
-        np.hstack(facets),
+        np.hstack(entities),
         np.hstack(values),
     )
     facet_tags.name = "facet_tags"
-    cell_tags.name = "cell_tags"
+
     mesh.name = "mesh"
 
     logger.debug("Save files")
-    with dolfinx.io.XDMFFile(comm, mesh_dir / "mesh.xdmf", "w") as xdmf:
+    meshname = "mesh_full.xdmf" if extract_submesh else "mesh.xdmf"
+    with dolfinx.io.XDMFFile(comm, mesh_dir / meshname, "w") as xdmf:
         xdmf.write_mesh(mesh)
         xdmf.write_meshtags(facet_tags, mesh.geometry)
         xdmf.write_meshtags(cell_tags, mesh.geometry)
 
-    logger.info("Mesh saved to %s", mesh_dir / "mesh.xdmf")
+    logger.info("Mesh saved to %s", mesh_dir / meshname)
+
+    if not extract_submesh:
+        return
+    submesh_data = scifem.mesh.extract_submesh(mesh, cell_tags, cell_not_ventricles)
+
+    # Transfer the facet tags to the submesh
+    submesh_data.domain.topology.create_connectivity(2, 3)
+    facet_tags_submesh, sub_to_parent_entity_map = scifem.mesh.transfer_meshtags_to_submesh(
+        facet_tags,
+        # geo.facet_tags,   # If available
+        submesh_data.domain,
+        vertex_to_parent=submesh_data.vertex_map,
+        cell_to_parent=submesh_data.cell_map,
+    )
+
+    np.save(mesh_dir / "sub_to_parent_entity_map.npy", sub_to_parent_entity_map)
+    np.save(mesh_dir / "vertex_map.npy", submesh_data.vertex_map)
+    np.save(mesh_dir / "cell_map.npy", submesh_data.cell_map)
+
+    # Remove overflow values
+    keep_indices = facet_tags_submesh.values > 0
+    facet_tags_new = dolfinx.mesh.meshtags(
+        submesh_data.domain,
+        fdim,
+        facet_tags_submesh.indices[keep_indices],
+        facet_tags_submesh.values[keep_indices],
+    )
+
+    facet_tags_new.name = "facet_tags"
+    submesh_data.cell_tag.name = "cell_tags"
+
+    with dolfinx.io.XDMFFile(comm, mesh_dir / "mesh.xdmf", "w") as xdmf:
+        xdmf.write_mesh(submesh_data.domain)
+        xdmf.write_meshtags(submesh_data.cell_tag, submesh_data.domain.geometry)
+        xdmf.write_meshtags(facet_tags_new, submesh_data.domain.geometry)

@@ -14,14 +14,9 @@ def test_labels_cli(name, capsys):
 def test_mesh_idealized_cli(tmp_path):
     cli.main(["mesh", "idealized", "-o", str(tmp_path)])
     for name in [
-        "connections_3.npy",
-        "coords_0.npy",
-        "coords_1.npy",
-        "connections_2.npy",
-        "connections_0.npy",
-        "coords_3.npy",
-        "coords_2.npy",
-        "connections_1.npy",
+        "point_array.npy",
+        "cell_array.npy",
+        "marker.npy",
         "mesh.h5",
         "ventricles.ply",
         "skull.ply",
@@ -34,4 +29,4 @@ def test_mesh_idealized_cli(tmp_path):
         "V34.ply",
         "mesh_params.json",
     ]:
-        assert (tmp_path / name).exists()
+        assert (tmp_path / name).exists(), name
