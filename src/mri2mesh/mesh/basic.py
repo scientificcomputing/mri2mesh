@@ -217,7 +217,7 @@ def convert_mesh_dolfinx(
     )
     if not extract_facet_tags:
         logger.debug("Save files")
-        with dolfinx.io.XDMFFile(comm, mesh_dir / "mesh_full.xdmf", "w") as xdmf:
+        with dolfinx.io.XDMFFile(comm, mesh_dir / "mesh.xdmf", "w") as xdmf:
             xdmf.write_mesh(mesh)
             xdmf.write_meshtags(cell_tags, mesh.geometry)
 
@@ -225,7 +225,7 @@ def convert_mesh_dolfinx(
 
     mesh.topology.create_connectivity(tdim - 1, tdim)
 
-    # FIXME: Here we just add hard coded values for now. This should be fixed in the future
+    # FIXME: Here we just add hard coded values for now. This should be fixed in the future.
 
     entities = []
     values = []
@@ -259,12 +259,13 @@ def convert_mesh_dolfinx(
     mesh.name = "mesh"
 
     logger.debug("Save files")
-    with dolfinx.io.XDMFFile(comm, mesh_dir / "mesh_full.xdmf", "w") as xdmf:
+    meshname = "mesh_full.xdmf" if extract_submesh else "mesh.xdmf"
+    with dolfinx.io.XDMFFile(comm, mesh_dir / meshname, "w") as xdmf:
         xdmf.write_mesh(mesh)
         xdmf.write_meshtags(facet_tags, mesh.geometry)
         xdmf.write_meshtags(cell_tags, mesh.geometry)
 
-    logger.info("Mesh saved to %s", mesh_dir / "mesh.xdmf")
+    logger.info("Mesh saved to %s", mesh_dir / meshname)
 
     if not extract_submesh:
         return
