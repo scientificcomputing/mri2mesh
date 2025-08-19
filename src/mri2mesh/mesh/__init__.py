@@ -27,6 +27,10 @@ def add_mesh_parser(parser: argparse.ArgumentParser) -> None:
 
     convert_parser = subparsers.add_parser("convert", help="Convert mesh to dolfinx")
     convert_parser.add_argument("mesh_dir", type=Path, help="Directory containing mesh files")
+    convert_parser.add_argument(
+        "--extract-facet-tags", action="store_true", help="Extract facet tags"
+    )
+    convert_parser.add_argument("--extract-submesh", action="store_true", help="Extract submesh")
 
     idealized_parser = subparsers.add_parser(
         "idealized",
@@ -41,12 +45,7 @@ def dispatch(command, args: dict[str, typing.Any]) -> int:
         basic.generate_sameple_config(**args)
 
     elif command == "create":
-        mesh_dir = basic.create_mesh_from_config(**args)
-        try:
-            basic.convert_mesh_dolfinx(mesh_dir=mesh_dir)
-        except ImportError:
-            logger.debug("dolfinx not installed, skipping conversion to dolfinx")
-
+        basic.create_mesh_from_config(**args)
     elif command == "convert":
         basic.convert_mesh_dolfinx(**args)
 
