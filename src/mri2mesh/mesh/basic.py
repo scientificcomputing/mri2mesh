@@ -215,6 +215,7 @@ def convert_mesh_dolfinx(
         adj,
         local_values.astype(np.int32, copy=False),
     )
+    cell_tags.name = "cell_tags"
     if not extract_facet_tags:
         logger.debug("Save files")
         with dolfinx.io.XDMFFile(comm, mesh_dir / "mesh.xdmf", "w") as xdmf:
@@ -255,7 +256,7 @@ def convert_mesh_dolfinx(
         np.hstack(values),
     )
     facet_tags.name = "facet_tags"
-    cell_tags.name = "cell_tags"
+
     mesh.name = "mesh"
 
     logger.debug("Save files")
