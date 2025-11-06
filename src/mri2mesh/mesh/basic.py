@@ -189,20 +189,26 @@ def convert_mesh_dolfinx(
     import basix
     import ufl
 
+    try:
+        from dolfinx.io import gmsh as gmshio
+    except ImportError:
+        from dolfinx.io import gmshio
+
     point_array = np.load(mesh_dir / "point_array.npy")
     cell_array = np.load(mesh_dir / "cell_array.npy")
     marker = np.load(mesh_dir / "marker.npy")
 
     comm = MPI.COMM_WORLD
+
     mesh = dolfinx.mesh.create_mesh(
-        comm,
-        cell_array.astype(np.int64),
-        point_array,
-        ufl.Mesh(basix.ufl.element("Lagrange", "tetrahedron", 1, shape=(3,))),
+        comm=comm,
+        cells=cell_array.astype(np.int64),
+        x=point_array,
+        e=ufl.Mesh(basix.ufl.element("Lagrange", "tetrahedron", 1, shape=(3,))),
     )
     tdim = mesh.topology.dim
     fdim = tdim - 1
-    local_entities, local_values = dolfinx.io.gmshio.distribute_entity_data(
+    local_entities, local_values = gmshio.distribute_entity_data(
         mesh,
         tdim,
         cell_array.astype(np.int64),
