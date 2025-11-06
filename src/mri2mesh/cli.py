@@ -73,7 +73,7 @@ def dispatch(parser: argparse.ArgumentParser, argv: Optional[Sequence[str]] = No
             logger.error(f"Unknown command {command}")
             parser.print_help()
     except ValueError as e:
-        logger.error(e)
+        logger.error(e, exc_info=True, stacklevel=2)
         parser.print_help()
 
     return 0
