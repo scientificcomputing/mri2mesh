@@ -88,6 +88,12 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
         default=0.154949,
         help="Skull z1",
     )
+    parser.add_argument(
+        "--scale-factor",
+        type=float,
+        default=1.0,
+        help="Scale factor",
+    )
 
 
 def main(
@@ -104,6 +110,7 @@ def main(
     skull_y1: float = 0.173221,
     skull_z0: float = 0.001,
     skull_z1: float = 0.154949,
+    scale_factor: float = 1.0,
 ) -> None:
     import pyvista as pv
 
@@ -113,10 +120,10 @@ def main(
     z = np.array([0, 0, 1])
     skull = pv.Box((skull_x0, skull_x1, skull_y0, skull_y1, skull_z0, skull_z1))
     c = skull.center_of_mass()
-    par = pv.Sphere(r * parenchyma_factor, center=c)
-    LV = pv.Sphere(r * lv_factor, center=c)
+    par = pv.Sphere(radius=r * parenchyma_factor, center=c)
+    LV = pv.Sphere(radius=r * lv_factor, center=c)
     V34 = pv.Cylinder(
-        c - v34_center_factor * r * z,
+        center=c - v34_center_factor * r * z,
         direction=z,
         height=r * v34_height_factor,
         radius=v34_radius_factor * r,
@@ -127,6 +134,7 @@ def main(
         [V34, LV, par, skull, ventricles],
         ["V34", "LV", "parenchyma_incl_ventr", "skull", "ventricles"],
     ):
+        s.scale(scale_factor, inplace=True)
         pv.save_meshio(outdir / f"{n}.ply", s)
 
     from .. import __version__
@@ -148,6 +156,7 @@ def main(
                 "skull_z1": skull_z1,
                 "version": __version__,
                 "timestamp": datetime.datetime.now().isoformat(),
+                "scale_factor": scale_factor,
             },
             indent=2,
         )

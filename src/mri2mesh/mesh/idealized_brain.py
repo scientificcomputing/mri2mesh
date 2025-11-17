@@ -144,6 +144,12 @@ def add_arguments(parser):
         action="store_true",
         help="Manifold surface",
     )
+    parser.add_argument(
+        "--scale-factor",
+        type=float,
+        default=1.0,
+        help="Scale factor",
+    )
 
 
 def main(
@@ -171,6 +177,7 @@ def main(
     use_floodfill: bool = False,
     smooth_open_boundary: bool = False,
     manifold_surface: bool = False,
+    scale_factor: float = 1.0,
 ) -> None:
     logger.info("Generating idealized brain surface")
     from ..surface.idealized_brain import main as main_surface
@@ -189,6 +196,7 @@ def main(
         skull_y1=skull_y1,
         skull_z0=skull_z0,
         skull_z1=skull_z1,
+        scale_factor=scale_factor,
     )
     from .basic import create_mesh, CSGTree, convert_mesh_dolfinx
 
