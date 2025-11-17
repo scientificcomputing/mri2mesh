@@ -180,8 +180,70 @@ def create_mesh(
     # Intersection exterior facets
 
 
+def extract_submesh_func(domain, cell_tags, facet_tags, tags: list[int]):
+    """
+    Extracts a submesh from a parent mesh given a specific cell tag.
+
+    This function also transfers the relevant facet tags from the parent
+    mesh to the new submesh boundary.
+
+    Parameters
+    ----------
+    domain : dolfinx.mesh.Mesh
+        The parent mesh.
+    cell_tags : dolfinx.mesh.MeshTags
+        MeshTags marking the cells of the parent mesh.
+    facet_tags : dolfinx.mesh.MeshTags
+        MeshTags marking the facets of the parent mesh.
+    tags : list[int]
+        The cell tag to extract (e.g., OUTER_TAG or INNER_TAG).
+
+    Returns
+    -------
+    submesh_data : scifem.mesh.SubmeshData
+        A data structure (likely a namedtuple) from the scifem library
+        containing the submesh and entity maps to the parent.
+    facet_tags_new : dolfinx.mesh.MeshTags
+        A new MeshTags object defined on the submesh, containing only
+        the facets that were also tagged in the parent `facet_tags`.
+    """
+    import dolfinx
+    import scifem
+
+    print(f"Extracting submesh for tag {tags}...")
+    # Use scifem to create the submesh from the marked cells
+    submesh_data = scifem.mesh.extract_submesh(domain, cell_tags, tags)
+    submesh_data.domain.topology.create_connectivity(2, 3)  # fdim -> cdim
+
+    # Transfer the parent facet tags to the new submesh
+    # This creates a new meshtag on the submesh. Facets that were not in
+    # the parent `facet_tags` will have a value of 0.
+    facet_tags_submesh, _ = scifem.mesh.transfer_meshtags_to_submesh(
+        facet_tags,
+        submesh_data.domain,
+        vertex_to_parent=submesh_data.vertex_map,
+        cell_to_parent=submesh_data.cell_map,
+    )
+
+    # Filter out the facets that had a value of 0 (i.e., were not tagged)
+    keep_indices = facet_tags_submesh.values > 0
+    facet_tags_new = dolfinx.mesh.meshtags(
+        submesh_data.domain,
+        submesh_data.domain.topology.dim - 1,
+        facet_tags_submesh.indices[keep_indices],
+        facet_tags_submesh.values[keep_indices],
+    )
+    facet_tags_new.name = "facet_tags"
+    submesh_data.cell_tag.name = "cell_tags"
+
+    return submesh_data, facet_tags_new
+
+
 def convert_mesh_dolfinx(
-    mesh_dir: Path, extract_facet_tags: bool = False, extract_submesh: bool = False
+    mesh_dir: Path,
+    extract_facet_tags: bool = False,
+    extract_submesh: bool = False,
+    scale_factor: float = 1.0,
 ):
     logger.info("Converting mesh to dolfinx in %s", mesh_dir)
     from mpi4py import MPI
@@ -206,6 +268,8 @@ def convert_mesh_dolfinx(
         x=point_array,
         e=ufl.Mesh(basix.ufl.element("Lagrange", "tetrahedron", 1, shape=(3,))),
     )
+
+    mesh.geometry.x[:] *= scale_factor
     tdim = mesh.topology.dim
     fdim = tdim - 1
     local_entities, local_values = gmshio.distribute_entity_data(
@@ -276,35 +340,29 @@ def convert_mesh_dolfinx(
 
     if not extract_submesh:
         return
-    submesh_data = scifem.mesh.extract_submesh(mesh, cell_tags, cell_not_ventricles)
 
-    # Transfer the facet tags to the submesh
-    submesh_data.domain.topology.create_connectivity(2, 3)
-    facet_tags_submesh, sub_to_parent_entity_map = scifem.mesh.transfer_meshtags_to_submesh(
-        facet_tags,
-        # geo.facet_tags,   # If available
-        submesh_data.domain,
-        vertex_to_parent=submesh_data.vertex_map,
-        cell_to_parent=submesh_data.cell_map,
+    submesh_data_outer, facet_tags_outer = extract_submesh_func(
+        mesh, cell_tags, facet_tags, cell_not_ventricles
     )
-
-    np.save(mesh_dir / "sub_to_parent_entity_map.npy", sub_to_parent_entity_map)
-    np.save(mesh_dir / "vertex_map.npy", submesh_data.vertex_map)
-    np.save(mesh_dir / "cell_map.npy", submesh_data.cell_map)
-
-    # Remove overflow values
-    keep_indices = facet_tags_submesh.values > 0
-    facet_tags_new = dolfinx.mesh.meshtags(
-        submesh_data.domain,
-        fdim,
-        facet_tags_submesh.indices[keep_indices],
-        facet_tags_submesh.values[keep_indices],
-    )
-
-    facet_tags_new.name = "facet_tags"
-    submesh_data.cell_tag.name = "cell_tags"
 
     with dolfinx.io.XDMFFile(comm, mesh_dir / "mesh.xdmf", "w") as xdmf:
-        xdmf.write_mesh(submesh_data.domain)
-        xdmf.write_meshtags(submesh_data.cell_tag, submesh_data.domain.geometry)
-        xdmf.write_meshtags(facet_tags_new, submesh_data.domain.geometry)
+        xdmf.write_mesh(submesh_data_outer.domain)
+        xdmf.write_meshtags(submesh_data_outer.cell_tag, submesh_data_outer.domain.geometry)
+        xdmf.write_meshtags(facet_tags_outer, submesh_data_outer.domain.geometry)
+
+    submap_outer = scifem.mesh.get_entity_map(submesh_data_outer.cell_map)
+    np.save(mesh_dir / "outer_submesh_cell_map.npy", submap_outer)
+
+    submesh_data_inner = scifem.mesh.extract_submesh(mesh, cell_tags, [VENTRICLES])
+
+    submesh_data_inner, facet_tags_inner = extract_submesh_func(
+        mesh, cell_tags, facet_tags, [VENTRICLES]
+    )
+
+    with dolfinx.io.XDMFFile(comm, mesh_dir / "mesh_inner.xdmf", "w") as xdmf:
+        xdmf.write_mesh(submesh_data_inner.domain)
+        xdmf.write_meshtags(submesh_data_inner.cell_tag, submesh_data_inner.domain.geometry)
+        xdmf.write_meshtags(facet_tags_inner, submesh_data_inner.domain.geometry)
+
+    submap_inner = scifem.mesh.get_entity_map(submesh_data_inner.cell_map)
+    np.save(mesh_dir / "inner_submesh_cell_map.npy", submap_inner)

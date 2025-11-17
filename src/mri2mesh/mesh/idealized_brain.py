@@ -150,6 +150,16 @@ def add_arguments(parser):
         default=1.0,
         help="Scale factor",
     )
+    parser.add_argument(
+        "--extract-submesh",
+        action="store_true",
+        help="Extract submesh",
+    )
+    parser.add_argument(
+        "--extract-facet-tags",
+        action="store_true",
+        help="Extract facet tags",
+    )
 
 
 def main(
@@ -178,6 +188,8 @@ def main(
     smooth_open_boundary: bool = False,
     manifold_surface: bool = False,
     scale_factor: float = 1.0,
+    extract_submesh: bool = False,
+    extract_facet_tags: bool = False,
 ) -> None:
     logger.info("Generating idealized brain surface")
     from ..surface.idealized_brain import main as main_surface
@@ -196,7 +208,6 @@ def main(
         skull_y1=skull_y1,
         skull_z0=skull_z0,
         skull_z1=skull_z1,
-        scale_factor=scale_factor,
     )
     from .basic import create_mesh, CSGTree, convert_mesh_dolfinx
 
@@ -229,4 +240,9 @@ def main(
         smooth_open_boundary=smooth_open_boundary,
         manifold_surface=manifold_surface,
     )
-    convert_mesh_dolfinx(mesh_dir=outdir)
+    convert_mesh_dolfinx(
+        mesh_dir=outdir,
+        scale_factor=scale_factor,
+        extract_submesh=extract_submesh,
+        extract_facet_tags=extract_facet_tags,
+    )
