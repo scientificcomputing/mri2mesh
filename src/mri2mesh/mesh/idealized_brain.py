@@ -240,9 +240,12 @@ def main(
         smooth_open_boundary=smooth_open_boundary,
         manifold_surface=manifold_surface,
     )
-    convert_mesh_dolfinx(
-        mesh_dir=outdir,
-        scale_factor=scale_factor,
-        extract_submesh=extract_submesh,
-        extract_facet_tags=extract_facet_tags,
-    )
+    try:
+        convert_mesh_dolfinx(
+            mesh_dir=outdir,
+            scale_factor=scale_factor,
+            extract_submesh=extract_submesh,
+            extract_facet_tags=extract_facet_tags,
+        )
+    except ImportError as e:
+        logger.warning("Could not convert mesh to dolfinx format: %s", e)
