@@ -31,6 +31,7 @@ mri2mesh = "mri2mesh.cli:main"
 
 [project.optional-dependencies]
 mesh = ["wildmeshing", "h5py"]
+pytetwild = ["pytetwild", "h5py"]
 test = ["pytest", "pytest-cov", "mri2mesh[mesh]"]
 docs = ["pyvista[jupyter]", "jupyter-book<2.0", "mri2mesh[mesh]"]
 
