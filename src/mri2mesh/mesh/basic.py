@@ -103,7 +103,7 @@ def create_mesh(
     edge_length_r: float = 0.015,
     skip_simplify: bool = False,
     coarsen: bool = True,
-    stop_quality: int = 8,
+    stop_quality: int = 10,
     max_its: int = 30,
     loglevel: int = 10,
     disable_filtering: bool = False,
@@ -129,7 +129,20 @@ def create_mesh(
     }
     logger.info(pprint.pformat(params))
 
-    import wildmeshing as wm
+    try:
+        import wildmeshing as wm
+
+        HAS_WILDMESHING = True
+    except ImportError:
+        HAS_WILDMESHING = False
+
+    try:
+        from pytetwild import PyfTetWildWrapper
+
+        HAS_PYTETWILD = True
+    except ImportError:
+        HAS_PYTETWILD = False
+
     import meshio
     import pyvista as pv
 
@@ -137,25 +150,45 @@ def create_mesh(
     outdir.mkdir(parents=True, exist_ok=True)
     (outdir / "mesh_params.json").write_text(json.dumps(params, indent=2))
 
-    tetra = wm.Tetrahedralizer(
-        epsilon=epsilon,
-        edge_length_r=edge_length_r,
-        coarsen=coarsen,
-        stop_quality=stop_quality,
-        max_its=max_its,
-        skip_simplify=skip_simplify,
-    )
-    tetra.set_log_level(loglevel)
+    if HAS_WILDMESHING:
+        tetra = wm.Tetrahedralizer(
+            epsilon=epsilon,
+            edge_length_r=edge_length_r,
+            coarsen=coarsen,
+            stop_quality=stop_quality,
+            max_its=max_its,
+            skip_simplify=skip_simplify,
+        )
+        tetra.set_log_level(loglevel)
 
-    tetra.load_csg_tree(json.dumps(csg_tree))
-    tetra.tetrahedralize()
-    point_array, cell_array, marker = tetra.get_tet_mesh(
-        all_mesh=disable_filtering,
-        smooth_open_boundary=smooth_open_boundary,
-        floodfill=use_floodfill,
-        manifold_surface=manifold_surface,
-        correct_surface_orientation=True,
-    )
+        tetra.load_csg_tree(json.dumps(csg_tree))
+        tetra.tetrahedralize()
+        point_array, cell_array, marker = tetra.get_tet_mesh(
+            all_mesh=disable_filtering,
+            smooth_open_boundary=smooth_open_boundary,
+            floodfill=use_floodfill,
+            manifold_surface=manifold_surface,
+            correct_surface_orientation=True,
+        )
+
+    else:
+        assert HAS_PYTETWILD, "Either wildmeshing or pytetwild must be installed"
+
+        csg_tree_path = outdir / "csg_tree.json"
+        csg_tree_path.write_text(json.dumps(csg_tree))
+        num_threads = 0
+        coarsen = True
+        vtk_ordering = True
+        point_array, cell_array, marker = PyfTetWildWrapper.tetrahedralize_csg(
+            str(csg_tree_path),
+            epsilon,
+            edge_length_r,
+            stop_quality,
+            coarsen,
+            num_threads,
+            loglevel,
+            vtk_ordering,
+        )
 
     tetra_mesh = meshio.Mesh(
         point_array, [("tetra", cell_array)], cell_data={"cell_tags": [marker.ravel()]}
@@ -163,7 +196,6 @@ def create_mesh(
 
     tetra_mesh_pv = pv.from_meshio(tetra_mesh)
     pv.save_meshio(outdir / "tetra_mesh.xdmf", tetra_mesh_pv)
-
     np.save(outdir / "point_array.npy", point_array)
     np.save(outdir / "cell_array.npy", cell_array)
     np.save(outdir / "marker.npy", marker)
