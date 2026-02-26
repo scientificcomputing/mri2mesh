@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mri2mesh"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = ["pyvista", "numpy", "matplotlib", "nibabel", "scikit-image", "scipy", "meshio"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
@@ -125,7 +125,7 @@ tag = true
 sign_tags = false
 tag_name = "v{new_version}"
 tag_message = "Bump version: {current_version} → {new_version}"
-current_version = "0.2.1"
+current_version = "0.3.0"
 
 
 [[tool.bumpversion.files]]
